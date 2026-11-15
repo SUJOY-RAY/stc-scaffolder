@@ -1,0 +1,15 @@
+{
+  "name": "stc-java-bootstrapper",
+  "version": "1.0.0",
+  "description": "STC (Standard Template Construct) — a dynamic Java Spring Boot project bootstrapper. Prompts for package/folder/user-fields/DB config and auto-generates a full Java project from a reference template.",
+  "main": "index.js",
+  "bin": {
+    "stc-boot": "index.js"
+  },
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
