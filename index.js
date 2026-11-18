@@ -121,6 +121,12 @@ async function main() {
   repackageDir(refSrcDir, targetSrcDir);
   repackageDir(refTestDir, targetTestDir);
 
+  // Safety: remove any leftover reference package dirs so stale/unreplaced
+  // templates can never end up compiled on the classpath.
+  for (const leftover of [refSrcDir, refTestDir]) {
+    if (fs.existsSync(leftover)) fs.rmSync(leftover, { recursive: true, force: true });
+  }
+
   // ---------------- Rename main class + test files ----------------
   function renameFile(dir, oldName, newName) {
     const oldP = path.join(dir, oldName);
