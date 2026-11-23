@@ -29,6 +29,8 @@ const {
 } = require('./lib/templates');
 const { copyRecursive, repackageDir, walk } = require('./lib/files');
 const { generateCrudForEntity } = require('./lib/crud');
+const { generateThymeleafListings } = require('./lib/thymeleaf');
+const { generateAdmin } = require('./lib/admin');
 const { buildSummary } = require('./lib/summary');
 
 const TEMPLATES_DIR = path.join(__dirname, 'templates');
@@ -168,6 +170,12 @@ async function main() {
   // ---------------- Auto-generate CRUD for the entity ----------------
   generateCrudForEntity(targetDir, 'User', fields);
 
+  // ---------------- Auto-generate Thymeleaf paginated listings for all @Entity models ----------------
+  generateThymeleafListings(targetDir);
+
+  // ---------------- Auto-generate Django-like admin (/db) for all @Entity models ----------------
+  generateAdmin(targetDir);
+
   // ---------------- Write SUMMARY.md ----------------
   const summary = buildSummary({
     projectName, groupId, artifactId, version, javaVersion, springBootVersion,
@@ -229,11 +237,37 @@ async function crudAddMode(projectDirArg) {
   }
 
   generateCrudForEntity(projectDir, entityPascal, fields);
+  generateThymeleafListings(projectDir);
+  generateAdmin(projectDir);
   console.log('\n[DONE] CRUD added for entity: ' + entityPascal);
 }
 
+/* ========================================================================
+   th:add — (re)generate Thymeleaf paginated listings for all @Entity models
+   Usage: node index.js th:add <projectDir>
+   ======================================================================== */
+async function thAddMode(projectDirArg) {
+  let projectDir = projectDirArg;
+  if (!projectDir) {
+    projectDir = (await ask('Path to existing project directory:')) || '';
+    projectDir = projectDir.replace(/^"(.*)"$/, '$1');
+  }
+  if (!projectDir || !fs.existsSync(projectDir)) {
+    console.error('\n[ERROR] Project directory not found.');
+    process.exit(1);
+  }
+  generateThymeleafListings(projectDir);
+  generateAdmin(projectDir);
+}
+
 const argv = process.argv.slice(2);
-if (argv[0] === 'crud:add') {
+if (argv[0] === 'th:add' || argv[0] === 'thymeleaf:add') {
+  thAddMode(argv[1]).then(() => close()).catch((err) => {
+    close();
+    console.error('\n[FATAL]', err.message);
+    process.exit(1);
+  });
+} else if (argv[0] === 'crud:add') {
   crudAddMode(argv[1]).then(() => close()).catch((err) => {
     close();
     console.error('\n[FATAL]', err.message);

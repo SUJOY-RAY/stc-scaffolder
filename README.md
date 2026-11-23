@@ -15,11 +15,14 @@ npm start            # same as node index.js
 ## Usage
 
 ```bash
-# Interactive bootstrap
+# Interactive bootstrap (also generates Thymeleaf listings for all @Entity models)
 node index.js
 
 # Add CRUD for a new entity to an already-generated project
 node index.js crud:add <path-to-existing-project>
+
+# (Re)generate Thymeleaf paginated listings for all @Entity models in a project
+node index.js th:add <path-to-existing-project>
 ```
 
 ## What it generates
@@ -29,6 +32,7 @@ node index.js crud:add <path-to-existing-project>
 - Spring Security with stateless sessions, BCrypt password encoding
 - Auto-seeded default admin account: `admin` / `admin123`
 - Auto-generated CRUD for the `User` entity under `/api/users`
+- Auto-generated Thymeleaf paginated, globally searchable and sortable listing page for **every** `@Entity` class (e.g. `/users`, `/roles`) under `src/main/resources/templates/`
 - H2 (dev, no database server required) and MySQL (dev-mysql / qa / prod) profiles
 - `STC-SUMMARY.md` with project details and next steps
 
@@ -60,6 +64,39 @@ cd <your-generated-project>
 ```
 
 > If Spring Boot complains about duplicate main classes (`__MAIN__`), run `.\mvnw.cmd clean` first to clear stale build output.
+
+## Thymeleaf entity listings
+
+Every class annotated with `@Entity` gets a server-rendered listing page:
+
+- **URL:** `GET /<entity-plural>` (e.g. `/users`, `/roles`) — a `@Controller` (not `@RestController`), so it returns HTML, not JSON.
+- **Pagination:** Spring Data `Pageable` with `page`/`size` query params and First/Prev/Next/Last + page-number controls.
+- **Global search:** `?search=` runs a JPA `Specification` — contains (case-insensitive) match over text columns and exact match over numeric/boolean columns.
+- **Sortable:** click any column header to toggle ascending/descending (`?sort=`/`?dir=`).
+- **Template:** `src/main/resources/templates/<entity-plural>.html` (Bootstrap 5 via CDN).
+- **Security:** the generated `SecurityConfig` permits `GET` page loads so the tables open without a JWT; the `/api/**` REST endpoints stay protected.
+
+Delete rows call the existing REST `DELETE /api/<entity>/{id}` (CSRF is disabled in the template). View/Edit buttons are placeholders to wire to your detail/edit forms.
+
+## Django-style admin (`/db`) — ADMIN only
+
+In addition to the public listings, a full admin is generated under `/db` for every `@Entity`:
+
+- **Dashboard:** `GET /db` lists all tables/entities with links to each admin section.
+- **Per-entity admin:** `GET /db/<plural>` — paginated, searchable, sortable table with full CRUD:
+  - **View** `GET /db/<plural>/{id}`
+  - **Create** `GET/POST /db/<plural>/new`
+  - **Edit** `GET/POST /db/<plural>/{id}/edit`
+  - **Delete** `POST /db/<plural>/{id}/delete` (with confirmation)
+- **Access control:** `/db/**` is restricted to users with the `ADMIN` role (`@PreAuthorize("hasRole('ADMIN')")` on every admin controller + `SecurityConfig` rule). The default seeded user `admin`/`admin123` has the ADMIN role, so log in as `admin` to reach `/db`.
+- **Templates:** `templates/<plural>.html` (list), `<plural>-form.html` (create/edit), `<plural>-view.html` (detail).
+
+Example URLs:
+- `GET /db` — admin dashboard (all tables)
+- `GET /db/users` — User table (paginated, search, sort)
+- `GET /db/users/new` — create a User
+- `GET /db/users/42` — view User #42
+- `GET /db/users/42/edit` — edit User #42
 
 ## Default credentials
 
