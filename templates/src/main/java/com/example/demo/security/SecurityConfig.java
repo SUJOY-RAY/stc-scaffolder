@@ -85,13 +85,6 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/test/user").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/test/admin").hasRole("ADMIN")
-                        // REST API (/api/**) and state-changing requests stay protected.
-                        .requestMatchers("/api/**").authenticated()
-                        // Django-style admin (/db/**) — ADMIN only
-                        .requestMatchers("/db/**").hasRole("ADMIN")
-                        // Thymeleaf server-rendered pages (GET only) are openly reachable
-                        // so the auto-generated entity listing tables work without a JWT.
-                        .requestMatchers(HttpMethod.GET, "/**").permitAll()
                         .anyRequest().authenticated()
                 );
 
